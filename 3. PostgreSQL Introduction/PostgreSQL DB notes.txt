@@ -1,0 +1,317 @@
+SQL - Structured Query Language 
+
+
+Not only relation DBs - NoSQL
+---------------------------------------
+* horizontal scaling means when we add another computer that can access the same DB. The scaling is more efficiant. Add 100% more
+	computer recources and receive 100% nore productivity.
+---------------------------------------
+
+REDIS DB - no relation DB - cash DB! - when coputer is restarted, the DB is gone!
+
+	* Super fast - cash executed
+	* Flexible - already made query is saved and ready for use
+
+Mongo DB - NoSQL or Not only SQL DB - no relation data base
+
+
+Relation DBs - SQL:
+---------------------------------------
+* vertical scaling means that we can add computer resources but efficiency will be average. Added 100% more recources receive only 	about 30 - 40 % more productivity - scaling to the DB
+---------------------------------------
+
+Postgre SQL - relation DB vertical scaling - Used in 80% of the projects!!!
+
+----------------------
+Install Docker Desktop - https://docs.docker.com/desktop/
+
+Install Linux Karnel update - https://learn.microsoft.com/en-us/windows/wsl/install-manual#step-4---download-the-linux-kernel-update-package or terminal --> wsl --update
+----------------------
+
+----------------------
+Install Postgre DB container:
+
+terminal --> docker run -p 5432:5432 -e POSTGRES_USER=postgres-user -e POSTGRES_PASSWORD=password -d -v my-postgres-data:/var/lib/postgresql/data --name custom-name postgres:latest
+----------------------
+
+----------------------
+Install pgAdmin container: pgAdmin - app to edit DB content
+
+terminal --> docker run -p 5050:80 -e PGADMIN_DEFAULT_EMAIL=some@email.com -e PGADMIN_DEFAULT_PASSWORD=password -v my-data:/var/lib/pgadmin -d dpage/pgadmin4 
+----------------------
+
+
+Log in pgAdmin: 
+
+	browse - http://localhost:5050
+	enter username and password --> can be found in Dexsktop Dcker/click on image/inspect windows
+
+
+
+Add New Server:
+	
+	General page
+
+	*	Name: postgre-docker server
+
+
+	Connection page:
+	
+	*	Host name/address: host.docker.internal or IPv4 address: 198.168.1.1	(can find IPv4 address in terminal-->ipconfig)
+	*	Username: postgres-user		(same username like the postgres container creation)
+	*	Password: password		(same password as when postgres container is created)
+	*	Save
+
+
+Create new database in pgAdmin:
+	
+	Browser section:
+
+	*	expand PostgreSQL Local
+	*	right click on Database(1)/Create-->Database
+	*	General page
+			*	Database: Company		(name of the database)
+			*	Save
+
+
+	Create table:
+
+	*	Databases/Company/Schemas/Tables --> right click --> Create/Table
+
+		General page
+			*	Name: Employee
+
+		Columns
+			*	click the + sighn in the upper right side of the page (above default box)
+
+			column name: name
+			*	Data type: character varying (varchar)
+			*	Length: 30
+			*	Not NULL: active	(can't be empty)
+			*	Primary Key: active only when ID or connection to other tables
+			* 	Default: default value when entity is added 
+
+			column name: id
+			*	Data type: serial
+			*	Length: 30
+			*	Not NULL: active	(can't be empty)
+			*	Primary Key: active
+			* 	Default:
+			
+			column name: locaton
+			*	Data type: character varying
+			*	Length: 100
+			*	Not NULL: 
+			*	Primary Key: 
+			* 	Default: 'Sofia'
+
+			column name: egn
+			*	Data type: character		(fixed length)
+			*	Length: 10
+			*	Not NULL: active	(can't be empty)
+			*	Primary Key: active
+			* 	Default:
+
+		Constraints page
+			*	Unique
+				*	General page/name: egn_is_unique
+				*	Definition/Columns: egn
+
+		
+		INFO: On SQL page is generated SQL code of the created atables
+		*	SAVE		#	can be edited by right click on table/Properties
+	
+
+		Showing data of the created table: right click on the table --> Query Tool
+			result in data output section
+
+		--------------
+		Data Types: Main ones: Strings, Booleans, Itegers, Time
+		--------------
+
+		STRINGS:
+
+			* CHAR - string with fixer length, example ID NUM(ЕГН) length is CHAR(10) - exactly 10 characters
+			* VARCHAR - string with variable character length - set the maximum length of the string - most used !!!
+			* TEXT - string with any length - searching of text column are slow !!!
+
+		INTEGERS:
+
+			* 	SMALLINT - 16 bit integer
+			*	ITEGER/INT - 32 bit integer
+			*	BIGINT - 64 bit integer - most used
+
+		FLOATS+
+
+
+TABLE RELATIONS:
+
+	Denormalized model -- > we have all the data in the same table --> Faster, repeating data
+
+	Normalized model -- > relations true different tables --> sittle bit slower
+
+	Foregin key --> primary key for the table that we are looking for the data
+	
+	Primary key --> key for the current table
+
+	Create one more table: cities:
+		name: character varying, 30, not null
+		id: 	integer, not null, primary key
+
+ 	Open emplyees table:
+		Constraints/Foregin Key --> add row with name: kf_emplyees_cities
+
+			In edit row/Columns:
+				*	Local column: city_id
+				*	References: public.cities
+				*	Referencing: id
+				*	ADD !!!
+		* SAVE
+	
+	TYPYS RELATIONSHIPS:	generated autoamtically with Django
+
+		* one to one
+
+				* User --> username, password, registered_on are defaults in django
+				  * add profile image, age, first name, last name by user_id foregin key
+			
+		* one to many
+				
+				* there is zero connections or many
+
+		* many to many
+			
+				* done with additional table with x foregin keys for x tables
+				  * mapping table - table with x columns with foregin keys
+				  * junction table - table with x columns + 1 with primary key for the table
+
+
+	Deleting data from one table with relation:
+
+		*	on delete restrict --> First we have to delete every relation with this piece of data and then delete the data
+		*	on delete cascade --> delete every data with relation to this data --> not safe !!!
+		*	on delete set --> make null to values with relation with this data 
+
+-------------------
+BASIC SQL Commands: CRUD - create, read, update, delete
+-------------------
+
+DDL - data definiton language
+DML - data manipulation language
+XXX - access 
+
+Create table --> known loook up!
+
+	manual coding transaction
+		right click on the table --> Query Tool
+
+Insert Data:
+
+	right click on the table --> Query Tool
+	result in data output section
+
+		Single entry
+			INSERT INTO employees (first_name, last_name)
+			VALUES ('Danio', 'Balabanov')
+
+		Multiple entry
+
+			INSERT INTO employees (first_name, last_name)
+			VALUES ('Danio', 'Balabanov'),
+				 ('Maria', 'Peshova')
+			
+Retreive Data:
+
+	right click on the table --> Query Tool
+	result in data output section
+
+	SELECT
+
+		SELECT * FROM people		( * - for all )
+
+	limitet request
+
+		SELECT first_name, last_name, FROM people LIMIT 5
+
+	
+	WHERE
+	
+		SELECT id, CONTACT_WS(' ', first_name, last_name) AS name 
+		FROM employees 
+		WHERE CONTACT_WS(' ', first_name, last_name) LIKE 'D%' --> 'D%' is condition the result starts with 'D'. Can be '%i%'.
+
+			# IMPORTANT # 
+				WHERE first_name = 'Danio' 	# the equal sighn is only one for condition in SQL. In python are two!
+
+	UPDATE
+		
+		UPDATE employees
+  		SET last_name = 'Brown'
+		WHERE employee_id = 1;
+
+		OR
+
+		UPDATE employees
+   		SET salary = salary * 1.10,
+       	job_title = CONCAT('Senior',' ', job_title)
+ 		WHERE department_id = 3;
+
+		OR 
+
+		UPDATE employees
+		SET salary = salary + 100
+		WHERE job_title = 'Manager';
+		SELECT salary
+		FROM employees;
+
+	ALTER TABLE --> changing data in tables
+
+		add column:
+		ALTER TABLE employees
+		ADD COLUMN salary DECIMAL;
+
+		delete existing column:
+		ALTER TABLE people
+		DROP COLUMN full_name;
+
+		modifing data:
+		ALTER TABLE people
+		MODIFY COLUMN email VARCHAR(100);
+
+
+	Dropping and Truncating		# IMPORTANT
+
+
+		TRUNCATE TABLE employees;		# clearing the table but do not delete the table
+
+		DROP TABLE employees;			# deleting the data amd the table
+
+		DROP DATABASE soft_uni;			# deleting database !!! 
+			
+
+
+	DELETING DATA:
+
+		DELETE FROM employees
+		WHERE department_id = 1			# without WHERE the command is TRUNCATE
+		OR department_id = 2;
+
+		SELECT * FROM employees
+
+
+	DIFFERENT SQL JOINS --> 	https://es.wikipedia.org/wiki/Sentencia_JOIN_en_SQL#/media/Archivo:Joins_del_SQL.svg
+
+	Searching true different tables and result by JOIN conditioning !!! 
+
+	JOIN		# joining more than one table true foregin key (not mandatory foregin key, but desirable)
+
+		SELECT *
+		FROM table_name_1
+		JOIN table_name_2
+			ON table_name_1.table_name_2_id = table_name_2.id
+
+		# RIGHT JOIN table_name_2 --> shows any data existing in right (table_name_2) even if there is no match 
+
+IN PYCHARM IN TAB VIEW/DATABASE WE CAN VISUALIZE THE DATABASE WE WORKING WITH !!! DATA GRID ADD
+
+	pgAdmin is way more powerful than PyCharm database visualizator
