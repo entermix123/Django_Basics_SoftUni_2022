@@ -1,0 +1,293 @@
+django_my_new_site
+
+Most architectal model is (MV*) Nodel-View-*
+
+	Model contains the data (DB)
+	View handles UI
+	*:
+	  - Handles business logic
+	  - Gets/sets data into 'Model'
+	  - Returns data to 'View'
+
+Django uses MTV: Model-Template-View is this case View executes more fundtions - * from MV arch.
+
+
+First project! :
+D/Python projects/MySite
+
+Hot keys fo run: shif+F10
+Hot keys fo debug: shift+F9
+Hot keys fo stop: ctrl+F2
+
+configure search true file: ctrl+T
+configure new tab hot key
+
+1. Create Django Project:
+
+	PyCharm/New Project/Django Project.
+
+2. Create new App iside project:
+
+	terminal --> python manage.py startapp tasks
+	
+	move app folder inside main folder of the project
+
+
+3. Connect Data Base to the project PostgresSQL.
+
+	Install Docker destop
+
+	Create PGAdmin container in Docker	
+
+	Create User Image in Docker
+
+	Log in PGAdmin and create DB
+
+	# All instructions are here: E:\Cources\Python Web Basics - SoftUni септември 2022\3. PostgreSQL Introduction
+
+	In PyCharm.Django project/settings/DATABASE: line 78 go to link https://docs.djangoproject.com/en/4.2/ref/settings/#databases and take the code:
+	
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "tasks_db",                     #   Database name
+        "USER": "postgres-user",                # Database user the default in this case
+        "PASSWORD": "password",                 # Database user password
+        "HOST": "localhost",    # Database host or IP 127.0.0.1, not host.docker.internal-> for pg admin
+        "PORT": "5432",         # Database port
+    }
+}
+pip install
+
+Install addapter for DB PostgresSQL - Psycopg2:
+
+	terminal --> pip install psycopg2
+
+
+Go to PgAdmin and create DB tasks_db to user postgres-user
+
+
+Connect DB to the project:
+
+	go in Pycharm/Database/Add Source/PostgreSQL	# Database module in pycharm is DB explorer like PGAdmin
+	
+	Name: postgres@localhost
+	User: postgre-user
+	Password: password
+	test connection
+	OK
+
+Visualize the DB:
+
+	click on right extentions 1 of 4 and in drop menu of tasks_db check default schema
+
+
+IN MODELS tasks/models add:
+
+	
+from django.db import models
+
+# maps to DB tables
+class Task(models.Model):
+    name= models.CharField(max_length=30, null=False)  # varchar 30
+    description= models.TextField()				# column
+    priority= models.IntegerField()				# column
+
+
+Register changes:	
+	
+	terminal --> python manage.py makemigrations
+
+# check if changes in MODELS modules and add them to current version, create file in migrations/0001_initial.py
+
+
+Migrate changes:
+
+	terminal --> python manage.py migrate
+
+# migrate all changes in the project. In PGAdmin we can check created tables in tasks_db/Schemas/Tables including table tasks_task with all colums and parametters set in models.
+
+* all changes in DB should be made inside pycharm/Djcango project and migrate. 
+
+
+
+4. Django Admin: 2 types
+
+	- Admin for django project
+	- Admin site for set administration for the app  http://127.0.0.1:8000/admin, staff account or superuser
+
+create admin user:
+
+terminal --> python manage.py createsuperuser
+	
+	name: danio
+	e-mail: some@mail.com
+	pass: Danio12345
+
+We can login now in http://127.0.0.1:8000/admin
+
+
+In Djangp/admin add:
+-----------------------------------
+from django_my_new_site.tasks.models import Task    # import class
+
+@admin.register(Task)                       # create decorator
+class TaskAdmin(admin.ModelAdmin):          # create class admin task
+    pass
+-----------------------------------
+in http://127.0.0.1:8000/admin now we can see tasks
+
+In Django/admin we add
+-----------------------------------
+@admin.register(Task)                       
+class TaskAdmin(admin.ModelAdmin):         
+    	list_display = ('id', 'name', 'priority')		# added views in http://127.0.0.1:8000/admin, can be sorted
+-----------------------------------
+	
+5. VIEWS
+
+
+	2 types:
+	- function based
+	- class based - in next module
+
+Function base: low level:
+
+In Django/tasks/ 
+	- create urls.py
+	- add
+-----------------------------
+from django.urls import path
+from django_my_new_site.tasks.views import index
+
+urlpatterns = (
+    path('', index),    # set default url
+)
+----------------------------
+
+In Django/urls add:
+------------------------------------
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+
+    # site_url/tasks:(localhost:8000/tasks/)
+    path('tasks/', include('django_my_new_site.tasks.urls'))        # set path to tasks urls
+]
+------------------------------------
+
+In Django/tasks/views add:
+------------------------------------
+from django.shortcuts import render
+from django import http
+
+def index(request):
+    return http.HttpResponse('It worked')
+------------------------------------
+in http://127.0.0.1:8000/tasks now we can see 'It worked'
+
+
+
+In Django/tasks/views add:
+
+def get_all_tasks(request):
+	 all_tasks = Task.objects.all()		# obejct is manager module, all() take all instances from class Task
+
+Register the new view:
+
+	In Django/tasks/ursl only add:   		# include the path in internal urls only
+----------------------------------------------------	
+from django.urls import path
+from django_my_new_site.tasks.views import show_mininum_view, show_all_tasks
+
+urlpatterns = (
+    # http://localhost:8000/tsks/
+    path('', show_mininum_view),    # set default url
+    # http://localhost:8000/tsks/all
+    path('all/', show_all_tasks),   # add path to all tasks
+)
+---------------------------------------------------
+
+Represent all tasks:
+
+In Django/tasks/views add:
+-------------------------------------------
+from django.shortcuts import render
+from django import http
+from django_my_new_site.tasks.models import Task
+
+def show_mininum_view(request):
+    return http.HttpResponse('It worked')       # return string
+
+def show_all_tasks(request):
+    all_tasks = Task.objects.order_by('id').all()      # can be sorted ascending by id: order_by('id')
+    result = ', '.join(f"{t.name}({t.id})" for t in all_tasks)  # iterate true tasks and take name and id
+
+    return http.HttpResponse(result)       # retunr string - result
+-------------------------------------------
+
+6. TEMPLATES:
+
+In Django/templates
+	# do not include more safisticated logic in html files like filters, sortings and so...The logic should be executed in vews and in html file should only list the results!
+	- create file index.html
+	- add
+
+-----------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    # This is bootstrap css example:
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
+</head>
+<body>
+<h1>{{ title }}</h1>
+<h2>The tasks:</h2>
+
+<ul>
+    {% for task in tasks %}
+        <li>{{ task.name }}</li>
+    {% endfor %}
+</ul>
+
+</body>
+</html>
+----------------------------------
+
+
+In Django/tasks/urls add:
+----------------------------------------------
+from django.urls import path
+from django_my_new_site.tasks.views import show_mininum_view, show_all_tasks, index
+
+urlpatterns = (
+    # http://localhost:8000/tasks/
+    path('', index),
+    # http://localhost:8000/tasks/it_worked
+    path('it_worked', show_mininum_view),    # set default url
+    # http://localhost:8000/tasks/all
+    path('all/', show_all_tasks),   # add path to all tasks
+    # http://localhost:8000/tasks/index.html
+    path('index.html', show_all_tasks)
+)
+----------------------------------------------
+
+
+In Django/tasks/views add:
+------------------------------------
+def index(request):
+    all_tasks = Task.objects.order_by('id').all()
+    context = {
+        'title': 'The tasks app!',
+        'tasks': all_tasks,
+    }
+    return render(request, 'index.html', context)    # render() autamtically returns HTTP response.
+    # index.html is not html file, but html template in django
+
+
+
