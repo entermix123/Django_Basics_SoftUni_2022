@@ -1,0 +1,237 @@
+project departments_app
+
+I. create Django project departments_app
+
+	I.1. create app
+		terminal --> python manage.py startapp departments
+	I.2. move folder departments inside folder departments_app
+
+
+MANDATORY ACTIONS:
+
+1. In departments_app/settings, section INSTALLED_APPS, add "'departments_app.departments'," on row 40
+
+
+2. In departments_app/urls, add path as follow:
+-----------------------------------------
+from django.contrib import admin
+from django.urls import path, include   # import include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('departments/', include('departments_app.departments.urls'))   # add path to urls in departments
+]
+----------------------------------------
+
+
+3. In departmnets folder, create urls.py and add:
+-----------------------------------------
+from departments_app.departments.views import sample_view
+
+urlpatterns = (
+    path('', sample_view),
+)
+-----------------------------------------
+
+
+4. Im departments/views create simple view function:
+-----------------------------------------------------------
+from django.shortcuts import render
+
+def sample_view(request, *args, **kwargs):
+    print(f'args: {args}')
+    print(f'kwargs: {kwargs}')
+-----------------------------------------------------------
+
+
+
+
+CREATE ADDITIONAL DYNAMIC VIEWS:
+
+In departments_app/departments/urls.py, add:
+----------------------------------------------
+from departments_app.departments.views import sample_view
+from django.urls import path
+
+urlpatterns = (
+    # default method for homepage
+    path('', sample_view),
+
+    # additional view. if we specify id example 7, result of the print is: args: () kwargs: {'department_id': '7'}
+    # path('<department_id>/', sample_view),     # dynamic urls: http://127.0.0.1:8000/departments/7/
+
+    # additional view. if we specify id example 7, result of the print is: args: () kwargs: {'department_id': 7}
+    path('int/<int:department_id>/', sample_view),       # dynamic urls: http://127.0.0.1:8000/departments/int/7/
+)
+----------------------------------------------
+
+Default Path Converters:
+▪ str – matches any non-empty string, excluding "/"	# most used
+▪ int – matches zero or any positive integer		# most used
+▪ slug – matches any slug string consisting of ASCII letters, numbers, hyphens, and underscores		# most used
+▪ path - matches any non-empty string, including "/"
+▪ Allows you to match a complete URL path
+▪ uuid – matches a formatted UUID
+
+info: slug: human readable detail about some resours
+
+Use re_path() instead of path():
+
+re_path(r'^archive/(?P<archive_year>[2005-2021])/$', views.show_archive)	# specific cases
+
+▪ Makes the matching limited
+▪ Each captured argument is sent to the view as a string
+▪ Using unnamed RegEx groups isn't recommended
+▪ When both styles are mixed, any unnamed groups are ignored and only named groups are passed to the view function
+
+
+
+
+ADD ADDITIONAL URLS:
+
+URLS are tuple or list !
+
+include() - important functions, see how it works - check if the url is valid type (path() or re_path()) and add it to the tuple of location's urls
+
+---------------------------
+# Project urls main
+
+from django.contrib import admin
+from django.urls import path, include   # import include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('departments/', include('departments_app.departments.urls'))   # add path to urls in departments
+]
+---------------------------
+
+
+
+VIEWS:
+
+Function that take parameter 'request: HttpRequest' and return 'HttpResponse'. If there are urls passed, they are received as *args, **kwargs
+
+In departments_app/departments/views.py
+
+def sample_view(request, *args, **kwargs):		# sample_view
+    print(f'args: {args}')
+    print(f'kwargs: {kwargs}')
+
+
+def show_departments(request, *args, **kwargs):		# second way to go true args, kwargs
+    body = f'args: {args}, kwargs: {kwargs}'
+    return HttpResponse(body)					# return HttpResponse of body
+
+
+def show_departments_details(request, department_id):		# third way with receiving parametter
+    body = f'path: {request.path}, id: {department_id}'
+    return HttpResponse(body)						# return HttpResponse of body
+
+
+USED FOR PAGING (WHAT PAGE WE ARE ON), SORTING, FILTERING:
+
+
+def show_departments(request: HttpRequest, *args, **kwargs):
+    order_by = request.GET.get('order_by', 'name')
+    body = f'path: {request.path}, args: {args}, kwargs: {kwargs}, order_by: {order_by}'
+
+    return HttpResponse(body)
+
+    # http://127.0.0.1:8000/departments/?Order_by=id
+    # result: path: /departments/, args: (), kwargs: {}, order_by: name
+
+    # http://127.0.0.1:8000/departments/?Order_by
+    # result: path: /departments/, args: (), kwargs: {}, order_by: name
+
+
+DJANGO SHORTCUTS:
+
+if views:
+
+from django.http import HttpResponse, HttpRequest
+from django.shortcuts import render, redirect
+
+
+
+1. render() - most used shortcut in Django !
+
+---------------------------------------------
+def show_departments(request: HttpRequest, *args, **kwargs):
+    context = {
+        'method': request.method,          # if key is method, take result of request.method
+        'order_by': request.GET.get('order_by', 'name'),  # if key is order_by, take result of request.GET.get('order_by', 'name')
+    }
+    return render(request, 'departments/all.html', context)
+---------------------------------------------
+
+
+
+
+2. redirect() - 
+
+1. In departments_app/departments/views.py
+-----------------------------
+from random import choice
+
+def redirect_to_first_department(request):
+    possible_order_by = ['name', 'age', 'id']
+    order_by = choice(possible_order_by)
+    # return redirect(f'departments/?order_by={order_by}')
+    # http://127.0.0.1:8000/departments/?order_by=name
+    # to = f'departments/?order_by={order_by}'            # redirect to some function
+    # to = 'http//something.com'                          # redirect to other site
+    # return redirect(to)
+    return redirect('show department')
+-----------------------------
+
+2. In departments_app/departments/urls.py
+-----------------------------
+urlpatterns = (
+path('redirect/', redirect_to_first_department)
+)
+-----------------------------
+
+
+RETURNING ERRORS:
+
+In departments_app/departments/views.py
+
+Example 1:
+-----------------------------
+def show_not_found(request):
+    status_code = 400
+    # if status_code == 404:
+    #     return HttpResponseNotFound('This not found')
+    # elif status_code == 400:
+    #     return HttpResponseBadRequest('This is bad')
+    return HttpResponse('ERROR', status=status_code)
+    # http://127.0.0.1:8000/departments/not-found/ , result: ERROR
+----------------------------
+Example 2:
+-----------------------------
+def show_not_found(request):
+    raise Http404('Not Found!')
+----------------------------
+Example 3:
+-----------------------------
+def show_not_found(request):
+    return HttpResponseNotFound('This not found')       # result: This not found 	# most used
+----------------------------
+
+
+Example 4:
+-----------------------------
+def show_not_found(request):
+    get_object_or_404(calssinstance)
+    raise Http404('Not Found!') 
+----------------------------
+
+
+In departments_app/departments/urls.py
+----------------------------
+urlpatterns = (
+path('not-found/', show_not_found, name='not found'),
+)
+----------------------------
+	
+
