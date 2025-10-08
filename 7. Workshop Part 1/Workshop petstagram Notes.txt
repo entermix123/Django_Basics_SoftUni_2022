@@ -1,0 +1,354 @@
+1. Create Django project - petstagram
+
+2. create apps: 
+	- Tools/Run manage.py Task...
+		terminal --> python manage.py startapp photos
+		terminal --> python manage.py startapp pets
+		terminal --> python manage.py startapp accounts
+		terminal --> python manage.py startapp common
+	or
+	- terminal/project dir --> python manage.py startapp
+					terminal --> startapp pets
+					terminal --> startapp accounts
+					terminal --> startapp common
+
+
+3. add apps in petstagram/settings.py:
+------------------------------------------
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+
+    'petstagram.pets',				# added
+    'petstagram.accounts',			# added
+    'petstagram.photos',			# added
+    'petstagram.common',			# added
+]
+------------------------------------------
+
+4. In petstagram/urls.py add:
+---------------------------
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('petstagram.common.urls')),
+    path('accounts/', include('petstagram.accounts.urls')),
+    path('pets/', include('petstagram.pets.urls')),
+    path('photos/', include('petstagram.photos.urls')),
+]
+--------------------------
+
+
+5. Create folder templates/app_name for every app and import their html files
+Example:
+--------------------
+petstagram
+	templates
+		accounts
+		pets
+		common
+		photos
+--------------------
+
+
+5. Add html files to every directory described in 06-Workshop-Part-1 manual.
+
+6. In petstagram/accounts/views.py:
+------------------------------------------
+from django.shortcuts import render
+
+
+def login_user(request):
+    return render(request, 'accounts/login-page.html')
+
+
+def register_user(request):
+    return render(request, 'accounts/register-page.html')
+
+
+def delete_user(request, pk):
+    return render(request, 'accounts/profile-delete-page.html')
+
+
+def details_user(request, pk):
+    return render(request, 'accounts/profile-details-page.html')
+
+
+def edit_user(request, pk):
+    return render(request, 'accounts/profile-edit-page.html')
+------------------------------------------
+
+7. Create petstagram/accounts/urls.py and add:
+--------------------------
+from django.urls import path, include
+from petstagram import views
+
+urlpatterns = [
+    peth('register/', views.register, name='register'),
+    peth('login/', views.login, name='login'),
+    peth('profile/<int:pk>/', include(
+        path('', views.show_profile_details, name= 'profile_details'),
+        path('edit/', views.edit_profile, name='profile-edit'),
+        path('delete/', views.delete_profile, name='profile-delete'),
+    )),
+]
+--------------------------
+
+8. In petstagram/common/views.py:
+------------------------------------------
+from django.shortcuts import render
+
+
+def index(request):
+    return render(request, 'common/home-page.html')
+------------------------------------------
+
+
+9. In petstagram/common/urls.py
+------------------------------------------
+from django.urls import path
+from petstagram.common.views import index
+
+urlpatterns = (
+    path('', index, name='home page'),
+)
+------------------------------------------
+
+## test in browser: http://127.0.0.1:8000/, http://127.0.0.1:8000/accounts/login, http://127.0.0.1:8000/accounts/register ##
+
+
+10. In petstagram/pets/views.py
+------------------------------------------
+from django.shortcuts import render
+
+
+def add_pet(request):
+    return render(request, 'pets/pet-add-page.html')
+
+
+def delete_pet(request, username, pet_name):			# need additional username and pet name parameters
+    return render(request, 'pets/pet-delete-page.html')
+
+
+def details_pet(request, username, pet_name):			# need additional username and pet name parameters
+    return render(request, 'pets/pet-details-page.html')
+
+
+def edit_pet(request, username, pet_name):			# need additional username and pet name parameters
+    return render(request, 'pets/pet-edit-page.html')
+------------------------------------------
+
+
+11. In petstagram/pets/urls.py
+------------------------------------------
+from django.urls import path, include
+from petstagram.pets.views import add_pet, delete_pet, edit_pet, details_pet
+
+urlpatterns = (
+    path('add/', add_pet, name='add pet'),
+    path('<str:username>/pet/<slug:pet_name>/', include([		# slug is like primary key but string
+        path('', details_pet, name='details pet'),
+        path('edit/', edit_pet, name='edit pet'),
+        path('delete/', delete_pet, name='delete pet'),
+    ])),
+)
+------------------------------------------
+
+
+12. In petstagram/photos/views.py
+------------------------------------------
+from django.shortcuts import render
+
+
+def add_photo(request):
+    return render(request, 'photos/photo-add-page.html')
+
+
+def details_photo(request, pk):
+    return render(request, 'photos/photo-details-page.html')
+
+
+def edit_photo(request, pk):
+    return render(request, 'photos/photo-edit-page.html')
+------------------------------------------
+
+13. In petstagram/photos/urls.py
+------------------------------------------
+from django.urls import path, include
+from petstagram.photos.views import add_photo, details_photo, edit_photo
+
+urlpatterns = (
+    path('add/', add_photo, name='add photo'),
+    path('<int:pk>/', include([
+        path('', details_photo, name='details photo'),
+        path('edit/', edit_photo, name='edit photo'),
+    ])),
+)
+------------------------------------------
+
+## test in browser http://127.0.0.1:8000/photos/add, http://127.0.0.1:8000/photos/1/, http://127.0.0.1:8000/photos/1/edit ## 
+
+14. Create folder staticfiles in main project folder and add files from the project recources
+
+15. In petstagram/settings.py 125-130 add:
+---------------------------
+STATIC_URL = 'staticfiles/'		# default path is 'static/'.
+	
+STATICFILES_DIRS = (
+    BASE_DIR / '/staticfiles',	# folder path is staticfiles
+)
+---------------------------
+
+16. Create folder templates/base and file base.html --> templates/Base/base.html and add share parts of all html files for every app, usually header and footer, without body.
+
+
+17. Modify the code of every html file: 
+	- delete header and footer
+	- add {% extends 'base/base.html' %} on top of every html file
+	- add before body {%  block page_content %} and {% endblock %} after body
+
+
+## test all links:
+
+* add '<h1 style='background: black; color:white;font-size:68px'>IT WORKS</h1>' after main in base.html for testing purposes and see if 'ÍT WORKS' with black background appears on every link!
+
+links:
+
+
+http://127.0.0.1:8000/
+http://127.0.0.1:8000/accounts/login
+http://127.0.0.1:8000/accounts/register
+http://127.0.0.1:8000/accounts/profile/1/edit/
+http://127.0.0.1:8000/accounts/profile/1/delete/
+http://127.0.0.1:8000/photos/add
+http://127.0.0.1:8000/photos/1/
+http://127.0.0.1:8000/photos/1/edit
+http://127.0.0.1:8000/pets/add/
+http://127.0.0.1:8000/pets/dancho/pet/gosho/
+http://127.0.0.1:8000/pets/dancho/pet/gosho/edit/
+http://127.0.0.1:8000/pets/dancho/pet/gosho/delete/
+http://127.0.0.1:8000/404
+
+
+After test delete the row '<h1 style='background: black; color:white;font-size:68px'>IT WORKS</h1>'
+
+##
+
+18. In all html filesm, replace hard coded links to staticfiles with 
+
+## test http://127.0.0.1:8000/accounts/profile/1/ ## 
+
+
+19. In petstagram/settings.py 125-130 add:
+---------------------------
+STATIC_URL = 'static/'		# from STATIC_URL = 'staticfiles/' make it 'static/'
+---------------------------
+
+20. In templates/base/base.html, change: It should be done in the beggining
+---------------------------
+every link like: 'href="/staticfiles/css/styles.css">'
+or like: src="/staticfiles/images/free-30-instagram-stories-icons23_122570.png"
+have to be changed to: 
+href="{%  static 'files/css/styles.css' %}" 
+and 
+src="{%  static 'images/free-30-instagram-stories-icons23_122570.png' %}"
+---------------------------
+
+21. Create templates/base/partials/nav.html and from base/base.html import header section + {% load static %} and replace its position with '{% include 'base/partials/nav.html' %}'
+
+base.html line 19 - 21 		# This technic cut html file to smaller peaces that are easy to maintain and modify
+---------------------------
+<header>
+    {% include 'base/partials/nav.html' %}
+</header>
+---------------------------
+
+22. Link all quick links to assotiate html file In templates/base/partials/nav.html:
+---------------------------
+{% load static %}
+
+<nav class="navbar">
+    <div class="container">
+        <div class="logo">
+            <!-- Link to Home Page -->
+            <a href="{% url 'index' %}">
+                <img width="50px" src="{%  static 'images/free-30-instagram-stories-icons23_122570.png' %}" alt="img1">
+            </a>
+
+            <!-- Link to Home Page -->
+            <a class="home" href="{% url 'index' %}">
+                <i>Petstagram</i>
+            </a>
+        </div>
+
+        <div class="nav-links">
+            <ul class="nav-group">
+                <li class="nav-item">
+
+                    <!-- Link to Add Pet Page -->
+                    <a href="{% url 'add pet' %}">
+                        <i>Add Pet</i>
+                    </a>
+                </li>
+                <li class="nav-item">
+
+                    <!-- Link to Add Photo Page -->
+                    <a href="{% url 'add photo' %}">
+                        <i>Add Photo</i>
+                    </a>
+                </li>
+                <li class="nav-item">
+
+                    <!-- Link to Profile Page with praimary key=1 first user hard coded -->
+                    <a href="{% url 'user details' pk=1 %}">
+                        <i>Profile</i>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+---------------------------
+
+23. Go true every html file again and fix empty links (href="#"), search '<a>'. Change only links without buttons!!!
+
+24. In petstagram/settings.py line 26 - 31:	# When DEBUG = False, refreshing page of the project clear all static images and css.
+---------------------------
+DEBUG = False
+
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+]
+---------------------------
+
+We can fix this wiht command in terminal CMD --> python manage.py runserver --insecure
+					  terminal CMD --> python managae.py migrate
+					
+Make DEBUG = True
+
+
+25. In petstagram/settings.py line 133:
+---------------------------
+STATIC_ROOT = '/tmp/petstagram/static-files'
+---------------------------
+
+Create dirs tmp/petstagram/static-files and in terminall --> python manage.py collectstatic
+
+This download static files and css to this folder. Wen we deploy the project on server we must do this. 
+
+Open tmp/petstagram/static-files in visual studio code..IDE to see them.
+
+26. Upload files to GitHub:
+terminal --> git commit -m "name of the repository"
+terminal --> git push origin main
+
+
+27. GitHub login info: https://github.com/settings/keys, Generate SSH key and install it on PC with correct OS. Follow the instructions for connecting GitHub with no creadentials!
+
