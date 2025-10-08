@@ -1,0 +1,651 @@
+Project  django_templates_lection
+
+important moments in the video: 
+25:00, 52:00, 60:00 - dates, 90:00 - urls,  95:00 - csrf_token Tag - security of fishing sites, 
+2.16.00 - inclusion filters, 2.34.00 - inheritence, 2.58.00 - static files 3.09.0 - how to use, 3.12.20 - bootstrap
+
+3 mandatory steps in starting project:
+
+1. create app: 
+	terminal --> python manage.py startapp app_name
+	and move app inside main directory
+	
+2. create urls.py in the app directory and add:
+-----------------
+urlpatterns = ()
+-----------------
+
+3. add app urls to urls in main directory:
+-------------------------------------------
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('django_templates_lection.web.urls')),
+]
+-------------------------------------------
+
+
+Basic visualization in steps:
+
+
+1. In django_templates_lection/web/views.py
+-------------------------------------------
+from django.shortcuts import render
+import random
+
+def index(request):
+    context = {
+        'title': 'SoftUni Homepage',
+	  'value': random.random(),		# give us different number every refresh of the page
+    }
+    return render(request, 'index.html', context)
+------------------------------------
+
+2. In django_templates_lection/web/urls.py add:
+------------------------------------
+from django.urls import path
+from django_templates_lection.web.views import index
+
+urlpatterns = (
+    path('', index, name='index'),
+)
+------------------------------------
+
+3. Create templates/index.html
+------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <h1>{{ title }}: {{ value }}</h1>		# work in body
+</body>
+</html>
+------------------------------------
+
+4. Strat tha manage.py and go to http://127.0.0.1:8000/
+	
+	the result must be 'SoftUni Homepage: 0.404258013242374' or other random number
+
+
+Django template language - DTL RESTRICTIONS INFO:
+
+IN DJANGO IN HTML FILES:
+	- we cannot visualize keys form context with spaces. They are valid keys in dictionary, but the html cannot call them!
+	- no dots or words start with underscore and spaces
+
+
+
+ACCESS DATA IN CONTEXT:
+
+	We can visualize every parametter, data structure or function in context like in python but with paretntecies: {{ object }}
+	
+valid examples:
+
+	{{ some_dictionary.some_key }}
+	{{ some_function }}
+	{{ some_dictionary.items }}
+
+
+
+ FILTERS:
+
+	{{ value|truncatechars:N }} - Display the first N chars
+	{{ value|truncatewords:N }} - Display the first N words
+
+	{{ list|join:", " }} - Join list elements
+
+	{{ my_date|date:"Y/m/d" }} - Format a date: result - 2023/05/21 cap letter means funn description
+
+	{{ value|default:"nothing" }} - If a variable is false or empty, use given default
+
+	{{ value|length }} - Returns the length of the value (string or list)
+
+	{{ value|floatformat:N }} - Formats a float value to the Nth decimal place
+
+
+
+- TAGS (django template (DTL) tags:
+
+
+We can create function inside html file.
+
+-----------------------------------
+<div>
+<!-- if tags in html-->
+    {% if students %}
+        {{ students|join:', ' }}
+    {% else %}
+        No students			# if list is empty show No students
+    {% endif %}
+</div>
+-----------------------------------
+
+
+represent in menu format:
+-----------------------------------
+<ul>
+<!-- for tags in html, empty - if no students:-->
+    {% for student in students %}
+        <li>{{ student }}</li>
+    {% empty %}
+        <li>No employees in this list.</li>
+    {% endfor %}
+</ul>
+-----------------------------------
+
+represent with no dublicates that are one after another
+-----------------------------------
+<ul>
+<!-- for with if changed: represent single value! remove duplicates, but they have to be one after another-->
+    {% for student in students %}
+        {% ifchanged student%}
+            <li>{{ student }}</li>
+        {% endifchanged %}
+    {% empty %}
+        <li>No employees in this list.</li>
+    {% endfor %}
+</ul>
+-----------------------------------
+
+- REDIRECTION:						!!! IMPORTANT TO KNOW!!! ALL LINKS ARE MADE LIKE THIS !!!
+
+redirect link is made by:
+
+1. In django_templates_lection/web/urls.py add
+
+-----------------------------------
+from django.urls import path
+from django_templates_lection.web.views import index, about, redirect_to_home
+
+urlpatterns = (
+    path('', index, name='index'),
+    path('about/', about, name='about'),
+    path('go-to-home/', redirect_to_home, name='redirect to home'),
+)
+-----------------------------------
+
+
+2. In django_templates_lection/web/views.py:
+-----------------------------------
+from django.shortcuts import render, redirect
+from django.utils.datetime_safe import datetime
+import random
+
+
+def index(request):
+    context = {
+        'title': 'SoftUni Homepage',
+        'value': random.random(),
+        'info': {'address': 'Sofia'},
+        'student': Student('Dancho', 19),   # call get_info in index.html
+        'student_info': Student('Dancho', 19).get_info(),
+        'now': datetime.now(),
+        'students': ['Pesho', 'Gosho', 'Maria', 'Stamat'],
+        'capped': 'start_with_small_letter'
+    }
+    return render(request, 'index.html', context)
+
+
+def about(request):
+    context = {
+        'some': 'MF',
+    }
+    return render(request, 'about.html', context)
+
+
+def redirect_to_home(request):
+    return redirect('index')
+----------------------------------
+
+
+3. In templates/index.html add
+-----------------------------------
+<nav>
+    <a href="{% url 'about' %}">{% url 'about' %}</a>
+    <a href="{% url 'redirect to home' %}">{% url 'redirect to home' %}</a>
+</nav>
+-----------------------------------
+
+4. In templates/about.html
+-----------------------------------
+<nav>
+    <a href="{% url 'redirect to home' %}">{% url 'redirect to home' %}</a>
+</nav>
+-----------------------------------
+
+
+
+- csrf_token Tag
+
+Cross-site Request Forgery protection - used for security for http requests!
+
+Django application: django_templates_lection/settings.py/MIDDLEWARE
+
+In html file:
+	- used as a variable: {{ csrf_token }} - represent identifier 
+	- used as a tag: {% csrf_token %} - create hidden identifier in the request and expect same string in the response
+
+When request is sent, string is generated. The request should contain the same string 
+
+Example string: YUOxXBFzRO9mNVoeVvn5VV9JXi1ywJp1Q9r8KRsbFeyK8xJKkzR5W62kmaSM4BQ5
+
+
+
+CUSTOM FILTERS AND TAGS:
+
+They should be placed in specific locations to allow Django to find them: 
+Filters can receive only one parameter !!!
+Tags can receive as many parameters as we wont to work with.
+
+CREATE:
+
+@register.filter('odd') - decorator syntax with name of the decorator
+
+1. django_templates_lection/web/templatetags/filters.py	# name templatetags/filters.py is mandatory for django 
+-------------------------------------
+from django.template import Library
+
+register = Library()
+
+
+@register.filter('odd')
+def get_odd(values):					# one parameter
+    return [x * x for x in values if x % 2 == 1]
+
+
+@register.filter('app_style')
+def format_to_app_style(date):			# one parameter
+    return date.strftime("%Y/%m/%d %H:%M:%S")
+-------------------------------------
+
+
+
+simple_tag - Processes the data and returns a string
+inclusion_tag - Processes the data and returns a rendered template	# used for small view-template couple. Ex: navigation
+inclusion_tag - MOST USED for access to context details - authentication, rights etc.
+
+2. django_templates_lection/web/templatetags/tags.py		# name templatetags/tags.py is mandatory for django
+-------------------------------------
+from django.template import Library
+
+register = Library()
+
+
+@register.simple_tag(name="student_info")
+def show_student_info(student):
+    return f'Hello, my name is {student.name}'
+
+
+@register.simple_tag(name="sample_tag")
+def sample_tag(*args, **kwargs):		# many parameter
+    return ', '.join(str(x) for x in list(args) + list(kwargs.items()))
+
+
+# inclusion tag - used for # access to context details - authentication, rights etc.
+@register.inclusion_tag('tags/nav.html', name='app_nav')    # receive html file and define name of the decorator
+def generate_nav(*args):   						# can receive links like in this case
+    context = {
+        'url_names': args,
+    }
+    return context
+------------------------------------
+
+
+3. In django_templates_lection/web/views.py add list of numbers:
+------------------------------------
+from django.shortcuts import render, redirect
+import random
+
+from django.utils.datetime_safe import datetime
+
+def index(request):
+    context = {
+	  'now': datetime.now(),
+        'values': list(range(21)),				# list of numbers
+    }
+    return render(request, 'index.html', context)
+------------------------------------
+
+4. Create templates/tags/nav.html	# create dir and html file in templates
+
+
+HOW TO USE THEM:
+
+
+1. Filters:
+
+In html load them:
+----------------------
+{%  load filters %}	# name of the fail
+<div>
+    Original: {{ values }}		# original list
+</div>
+<div>
+    Odd: {{ values|odd }}		# execute name of decorator @register.filter('odd') in filters.py
+</div>
+
+<h2>
+	{{ now|app_style }}		# foramt current time as @register.filter('app_style') in filters.py
+</h2>
+---------------------
+
+
+2. Tags
+
+
+** Use simple_tag: not so popular
+
+In html load them:
+----------------------
+{%  load tags %}		# name of the fail
+
+<div>{% student_info student=student %}</div>
+<div>{% sample_tag 17 'Dancho' True %}</div>
+<div>{% sample_tag department='Engineering' Company='Неква компания' %}</div>
+----------------------
+
+** Use inclusion_tag first case : render another html file true the function. MOST USED !!! IMPORTANT TO KNOW !!!
+
+In templates/index.html
+----------------------
+{%  load filters %}
+{%  load tags %}
+
+Tag Nav:
+{% app_nav 'index' 'redirect to home' %}
+----------------------
+
+
+In templates/tags/nav.html
+----------------------
+<nav>
+    <ul>
+        {%  for url_name in url_names %}
+            <li>
+                <a href="{% url url_name %}">{{ url_name }}</a>
+            </li>
+        {%  endfor %}
+    </ul>
+</nav>
+----------------------
+
+
+** Use inclusion_tag second case case: can receive context!
+
+
+In django_templates_lection/web/templatetags/tags.py
+------------------------------
+# inclusion tag
+@register.inclusion_tag('tags/nav.html', name='app_nav', takes_context=True)    # receive also context
+def generate_nav(context, *args):   # access to context details - authentication, admin rights etc.
+    return {
+        'url_names': args,
+    }
+------------------------------
+
+* with server site rendering (SSR) we can abstract part of the visualization (templates). 
+
+* We can use inclusion tags in many templates !!!  REUSABLE !!! IMPORTANT !!!
+
+* With inclusion tags we can access dynamic data base objects and render it on html files!
+
+custom tags are used in wide prospective.
+build in tags are used for general purposes. 
+
+
+
+INHERITENCE:
+
+Give us possibility to create base template to be used from all other html files.
+
+Create templates/base/base.html directory base na dhtml file base!
+
+From index.html take all needed visualizations and move them to base.html and load filters and tags:
+
+Also we create block that that can be different in every child thml page:
+
+{# place holder for child template to use #}
+{% block page_content %}
+{% endblock %}
+
+In templates/base/base.html:
+------------------------------------
+{%  load filters %}
+{%  load tags %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>
+        {% block page_title %}      {# block for page title #}
+            My Site
+        {%  endblock %}
+    </title>
+    {#  Site CSS #}
+    <style>                         {#  default style for all pages #}
+        h1 {
+            color: green;
+        }
+    </style>
+    {%  block styles %}             {# block style for inheritence #}
+        {#  Page-specific CSS #}
+    {%  endblock %}
+
+    {%  block head_Scripts %}       {# block head for inheritence #}
+    {%  endblock %}
+</head>
+<body>
+
+{%  block body_start_scrypt %}      {# block body start for inheritence #}
+{%  endblock %}
+HTML Nav:
+<nav>
+    <a href="{% url 'about' %}">{% url 'about' %}</a>
+    <a href="{% url 'redirect to home' %}">{% url 'redirect to home' %}</a>
+</nav>
+
+Tag Nav:
+{% app_nav 'index' 'redirect to home' 'about' %}
+
+{# place holder for child template to use #}
+{# page_content is cutom name, can be any name #}
+{% block page_content %}
+
+{% endblock %}
+
+{%  block body_end_scrypt %}      {# block body end for inheritence #}
+{%  endblock %}
+</body>
+</html>
+------------------------------
+
+
+In templates/about.html
+------------------------------
+{% extends "base/base.html" %}
+{%  load filters %}
+{%  load tags %}
+
+{% block styles %}			# start block of custom page style
+    <style>
+    h1 {color: purple;}			# custom style for h1
+    </style>
+{%  endblock %}				# end block of custom style
+
+{% block page_content %}
+        {% block page_title %}	# page tag name
+            About Page
+        {%  endblock %}
+
+<h1>{{ some }}</h1>
+<nav>
+    <a href="{% url 'redirect to home' %}">{% url 'redirect to home' %}</a>	# navigation
+</nav>
+
+{%  endblock %}
+-----------------------------
+
+
+INCLUDING HTML - PARTIALS (snippets):	# equal a function in html. Give us possibility to break html to samll peaces
+
+They can load html file in specific block:
+
+1. create templates/partials/footer.html folder partials and file footer.html
+
+2. In templates/base/base.html add:
+------------------------------------
+{%  include 'partials/footer.html' %}
+{#  include when no python logic needed #}  # usually used for easy import of html - only one additional html file, two with tags
+{#  custom tags when python logic needed #} # custom tags are more powerful than include, they can use python logic
+------------------------------------
+
+- Also, an additional context can be passed to the template using keyword arguments:
+{% include template_name with user='user_name' %} 
+
+- Or, the context can be rendered only with the variables provided, or even no variables at all:
+{% include template_name with user='user_name' only %} 
+
+	
+
+STATIC FILES IN DJANGO:
+
+All pictures in site are static files. All CSS (Cascading Style Sheets), JS (Java scrypts) and visuals (pictures)
+
+In production (deployed on server, when DEBUG=False), Django do not care for static files!
+
+
+1. Create django_templates_lection/staticfiles/site.css, folder staticfiles and file site.css
+------------------------------------
+h1 {
+    text-decoration: underline;
+}
+
+a {
+    color: black;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+-----------------------------------
+
+2. In django_templates_lection/settings.py, line 121:
+-----------------------------------
+# base location in the browser
+STATIC_URL = '/static/'
+
+# location on file system
+STATICFILES_DIRS = [
+    BASE_DIR / 'staticfiles'  # concatenate with slash
+    # join(BASE_DIR, 'staticfiles'),	# second way
+]
+
+
+START CSS FILES:
+
+In templates/base/base.html add:
+-----------------------------------
+{% load static %}								# load static
+
+#  wrong way to load static files:					
+<link rel="stylesheet" href="/static/site.css">			# hardcode the path, if we want ot change path is more difficult
+
+# right way to load static files:					# changing STATIC_URL name do not matter! 
+<link rel="stylesheet" href="{% static 'site.css' %}"> 	# use static to load site.css with tag	
+-----------------------------------
+
+To include the CSS file, set the style sheet href attribute:
+------------------------------------
+{% load static %}
+<link rel="stylesheet" href="{% static './css/style.css' %}"/>
+------------------------------------
+
+To include an image, set the src attribute
+------------------------------------
+{% load static %}
+<img src="{% static './my_image.png' %}" alt="My image">
+------------------------------------
+
+GENERAL NOTE:
+
+* templates and views are always existing.
+* if we use some template in more than one place, use include function or static create custom tag if more complex logic is needed!
+
+
+BOOTSTRAP:
+
+Include one css file nad one javascrypt file:  https://getbootstrap.com/docs/5.3/getting-started/introduction/
+
+1. Find lin for css and javasrypt and paste them in templates/base/base.html:
+	- we can download libraries to work offline also!
+
+2. add bootstrap in for cycles in html:
+In templates/index.html
+------------------------------------
+<ul class="list-group">							# add class="list-group"
+<!-- for tags in html, empty - if no students:-->
+    {% for student in students %}
+        <li class="list-group-item">{{ student }}</li>	# class="list-group-item"
+    {% empty %}
+        <li>No employees in this list.</li>
+    {% endfor %}
+</ul>
+------------------------------------
+
+
+
+
+
+cache operations are already executed and saved in the cache! 
+
+MTV - model template view
+
+HTML is not dynamic language. Its static!
+
+comments in html: 
+
+single line:
+
+<!-- this is comment -->
+{# this is comment #}
+
+miltiline:
+
+{% comment %}
+this is another
+comment in
+multiline
+{% endcomment %}
+
+
+SSR - server-side rendering
+CSR - client-side rendering (React, Angular, Vue, etc)
+
+Django template languages:
+
+1. Django template language (DTL)
+2. Jinja2
+
+Variables in DTL:
+
+▪ Outputs a value from the view context (dict-like object)
+▪ Variables are surrounded by {{ and }}
+▪ The name of a variable:
+	▪ Cannot have spaces or punctuation characters
+	▪ May not have a dot in it
+	▪ May not be a number
+
+new django project
+
+1. create app
+2. add installed apps
+3. create urls in the app
+4. include app urls in project urls
+
